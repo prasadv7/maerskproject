@@ -1,0 +1,307 @@
+/* General Styles */
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+}
+
+/* Top Bar */
+.top-bar {
+    background-color: #1b3a57; /* Dark blue color */
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    height: 60px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo Section */
+.logo-container {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    height: 70px; /* Adjust the height of the logo */
+    width: auto;
+}
+
+/* Search Bar and Refresh Button Container */
+.search-refresh-container {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between the search bar and button */
+}
+
+.search-bar {
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    outline: none;
+    font-size: 14px;
+    width: 200px; /* Adjust the width of the search bar */
+}
+
+.search-bar:focus {
+    border-color: #1b3a57;
+    box-shadow: 0 0 5px rgba(27, 58, 87, 0.5);
+}
+
+.refresh-button {
+    background-color: #42b0d5; /* Red color */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.refresh-button:hover {
+    background-color: #c0392b; /* Darker red on hover */
+}
+
+/* Main Content */
+.main-content {
+    padding: 20px;
+}
+
+.info-bar {
+    background-color: #f9f9f9; /* Light background */
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    padding: 10px 20px;
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.info-label {
+    color: #2c3e50; /* Dark blue text */
+    display: flex;
+    align-items: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Status Dots */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-dot.green {
+    background-color: #28a745; /* Green */
+}
+
+.status-dot.yellow {
+    background-color: #ffc107; /* Yellow */
+}
+
+/* Entity Details Bar */
+.entity-details-bar {
+    display: flex;
+    background-color: #f4f4f9; /* Light background */
+    border-bottom: 1px solid #ddd;
+    padding: 15px 20px;
+    gap: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Entity Information Column */
+.entity-info {
+    flex: 1; /* Takes 1 part of the available space */
+    padding: 10px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.entity-info h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #2c3e50; /* Dark blue */
+}
+
+/* Unified Panels Bar */
+.unified-panels-bar {
+    display: flex;
+    gap: 1px; /* Small gap for visual separation */
+    background-color: #e1f5fe; /* Light blue background for the entire bar */
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid #ddd;
+}
+
+/* Left Panel: Entity Information */
+.entity-panel {
+    flex: 1; /* Takes 1 part of the available space */
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.entity-panel h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #2c3e50; /* Dark blue */
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+/* Right Panel: Details */
+.details-panel {
+    flex: 2;
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.details-panel h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #2c3e50; /* Dark blue */
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+/* Form Rows */
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-row label {
+    width: 150px;
+    font-size: 14px;
+    color: #333;
+    font-weight: bold;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    outline: none;
+    background-color: #f9f9f9;
+}
+
+.form-row textarea {
+    flex: 2; /* Larger area for comments */
+    resize: none;
+}
+
+#details-content {
+    margin-top: 15px;
+    font-size: 16px;
+    color: #333;
+}
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+    border-color: #1b3a57; /* Dark blue border on focus */
+    box-shadow: 0 0 5px rgba(27, 58, 87, 0.5);
+}
+
+/* Save Button */
+.save-button {
+    background-color: #1b3a57; /* Dark blue */
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.save-button:hover {
+    background-color: #16324a; /* Darker blue on hover */
+}
+
+/* Entity Panel Styles */
+.entity-panel {
+    flex: 1;
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.entity-panel h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #2c3e50;
+}
+
+/* Entity Block */
+.entity-block {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #e1f5fe; /* Light blue background */
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.entity-details {
+    flex-grow: 1; /* Allow the text to take up the remaining space */
+    color: #0277bd; /* Blue text color */
+}
+
+.entity-details p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Arrow Button */
+.entity-arrow {
+    display: flex;
+    align-items: center;
+}
+
+.arrow-button {
+    background-color: white;
+    border: 1px solid #0277bd; /* Blue border */
+    color: #0277bd;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.arrow-button:hover {
+    background-color: #0277bd; /* Blue background on hover */
+    color: white; /* White arrow */
+}

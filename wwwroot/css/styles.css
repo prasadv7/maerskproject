@@ -1,0 +1,109 @@
+/* General Body Styling */
+body {
+    height: 100vh; /* Full viewport height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: url('../images/IMG_8095.jpeg') no-repeat center center / cover;
+    font-family: 'Poppins', Arial, sans-serif; /* Modern, clean font */
+    margin: 0;
+}
+
+/* Frosted Glass Effect Container */
+.window {
+    width: 400px;
+    padding: 40px;
+    text-align: center;
+    border-radius: 20px;
+    backdrop-filter: blur(25px) brightness(150%) contrast(120%);
+    background: rgba(0, 0, 0, 0.4); /* Adds subtle tint to blur */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); /* Enhanced shadow for depth */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+}
+
+/* Input Fields */
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    color: white;
+    background: transparent;
+    font-size: 16px;
+    outline: none;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+form {
+    width: 100%;
+}
+
+/* Focus Effect */
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="text"]:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid white;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+/* Placeholder Styling */
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input[type="text"]::placeholder {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Submit Button */
+input[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    margin-top: 20px;
+    border-radius: 8px;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: 14px;
+    color: black;
+    background-color: white;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+input[type="submit"]:hover {
+    background-color: #f0f0f0;
+    color: black;
+}
+
+/* Small Text */
+small {
+    margin-top: 10px;
+    display: block;
+}
+
+small a {
+    color: #ffd700; /* Gold color for link */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+small a:hover {
+    text-decoration: underline;
+}
+
+/* Enhanced Shadow and Blur Focus */
+.window:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Hidden Class */
+.hidden {
+    display: none;
+}

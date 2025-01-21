@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="window">
+        <span class="h1" id="form-title">Sign In</span>
+        <form id="auth-form">
+            <!-- Name field for registration (initially hidden) -->
+            <div id="name-field" class="form-group hidden">
+                <input type="text" id="name" class="form-control" placeholder="Your name">
+            </div>
+            
+            <!-- Email and password fields (common) -->
+            <input type="email" id="email" class="form-control mt-4" placeholder="Your email" required>
+            <input type="password" id="password" class="form-control mt-2" placeholder="Your password" required>
+            
+            <!-- Submit button -->
+            <input type="submit" id="auth-button" class="btn btn-light mt-2" value="Sign In">
+
+            <!-- Toggle text for switching forms -->
+            <small id="toggle-text">
+                You do not have an account? 
+                <a href="#" id="toggle-link" class="text-warning">Sign up</a>
+            </small>
+        </form>
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>
