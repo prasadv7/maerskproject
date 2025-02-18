@@ -1,72 +1,17 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const jwtToken = localStorage.getItem("jwtToken"); // Use consistent key name
-    
-    // Debug: Log token information
-    if (jwtToken) {
-        try {
-            const debugPayload = JSON.parse(atob(jwtToken.split(".")[1]));
-            console.log('JWT Token payload:', debugPayload);
-        } catch (error) {
-            console.error('Error parsing token for debug:', error);
-        }
-    } else {
-        console.log('No token found in localStorage');
-        window.location.href = 'login.html'; // Redirect to login if no token
-        return;
-    }
-    
-    // Only check for JWT token if we're on a protected page
-    if (document.getElementById("username")) {
-        if (!jwtToken) {
-            alert("Access denied. Please log in first.");
-            window.location.href = "index.html";
-            return;
-        }
+    // DOM Elements
+    const entityList = document.getElementById('entity-list');
+    const fiscalRecordsList = document.getElementById('fiscal-records-list');
+    const detailsForm = document.getElementById('details-form');
 
-        // JWT token related code for protected pages
-        const usernameElement = document.getElementById("username");
-        const contentSection = document.getElementById("content-section");
-        const logoutLink = document.getElementById("logout-link");
-
-        if (usernameElement && jwtToken) {
-            const payload = JSON.parse(atob(jwtToken.split(".")[1]));
-            usernameElement.textContent = payload.name || "User";
-        }
-
-        // Protected page event listeners
-        if (document.getElementById("user-info-link")) {
-            document.getElementById("user-info-link").addEventListener("click", () => {
-                contentSection.innerHTML = `<h2>Your Information</h2><p>Email: ${payload.email}</p>`;
-            });
-        }
-
-        if (logoutLink) {
-            logoutLink.addEventListener("click", () => {
-                localStorage.removeItem("jwtToken"); // Use consistent key name
-                window.location.href = "login.html";
-            });
-        }
-    }
-
-    // Dashboard specific functionality
-    const detailsContent = document.getElementById("details-content");
-    const arrowButtons = document.querySelectorAll(".arrow-button");
-
-    console.log("Details content found:", !!detailsContent);
-    console.log("Number of arrow buttons found:", arrowButtons.length);
-
-    const showLoading = () => {
-        if (detailsContent) {
-            detailsContent.innerHTML = '<h3>Getting your data...</h3>';
-        }
-    };
+    // State Management
+    window.selectedEntity = null;
 
     // Helper function for API calls
-    const callApi = async (url, method = 'GET', body = null) => {
+    async function callApi(url, method = 'GET', body = null) {
         const token = localStorage.getItem('jwtToken');
         if (!token) {
-            alert('Your session has expired. Please log in again.');
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
             return;
         }
 
@@ -75,170 +20,260 @@ document.addEventListener("DOMContentLoaded", () => {
             'Authorization': `Bearer ${token}`
         };
 
-        const options = {
-            method,
-            headers
-        };
+        try {
+            const response = await fetch(`http://localhost:5000${url}`, {
+                method,
+                headers,
+                body: body ? JSON.stringify(body) : null,
+                credentials: 'include'
+            });
 
-        if (body) {
-            options.body = JSON.stringify(body);
+            if (response.status === 401) {
+                window.location.href = 'index.html';
+                return;
+            }
+            return response;
+        } catch (error) {
+            console.error('API call failed:', error);
+            throw error;
         }
+    }
 
-        const response = await fetch(url, options);
+    // Load Entities from Database
+    async function loadEntities() {
+        try {
+            const response = await callApi('/api/Entity');
+            console.log('Entity API Response:', response);
+            if (response.ok) {
+                const entities = await response.json();
+                console.log('Entities loaded:', entities);
+                displayEntities(entities);
+            } else {
+                console.error('Failed to load entities:', await response.text());
+            }
+        } catch (error) {
+            console.error('Error loading entities:', error);
+        }
+    }
+
+    // Display Entities in the Panel
+    function displayEntities(entities = []) {
+        console.log('Displaying entities:', entities);
+        entityList.innerHTML = '';
         
-        if (response.status === 401) {
-            // Handle unauthorized / expired token
-            localStorage.removeItem('jwtToken');
-            window.location.href = 'login.html';
+        if (entities.length === 0) {
+            const noEntitiesMessage = document.createElement('div');
+            noEntitiesMessage.className = 'no-entities-message';
+            noEntitiesMessage.innerHTML = `
+                <p>No entities available.</p>
+            `;
+            entityList.appendChild(noEntitiesMessage);
+            return;
+        }
+        
+        entities.forEach(entity => {
+            const entityBlock = document.createElement('div');
+            entityBlock.className = 'entity-block';
+            
+            const companyInfo = `<strong>CC:</strong> ${entity.company_Code || entity.Company_Code} | <strong>HFM Code:</strong> ${entity.hfm_Code || entity.HFM_Code}`;
+            const entityName = entity.legal_Entity_Name || entity.Legal_Entity_Name;
+            const country = entity.tax_Reporting_Country || entity.Tax_Reporting_Country;
+            
+            entityBlock.innerHTML = `
+                <div class="entity-details">
+                    <p>${companyInfo}</p>
+                    <p>${entityName}</p>
+                    <p>${country}</p>
+                </div>
+                <div class="entity-arrow">
+                    <button class="arrow-button" data-entity-id="${entity.ID || entity.id}" title="View Details">→</button>
+                </div>
+            `;
+            
+            entityBlock.addEventListener('click', () => {
+                document.querySelectorAll('.entity-block').forEach(block =>
+                    block.classList.remove('selected'));
+                
+                entityBlock.classList.add('selected');
+                window.selectedEntity = entity.ID || entity.id;
+                loadFiscalRecords(window.selectedEntity);
+                displayEntityDetails(entity);
+            });
+            
+            const arrowButton = entityBlock.querySelector('.arrow-button');
+            arrowButton.addEventListener('click', () => {
+                document.querySelectorAll('.entity-block').forEach(block =>
+                    block.classList.remove('selected'));
+                
+                entityBlock.classList.add('selected');
+                window.selectedEntity = entity.ID || entity.id;
+                loadFiscalRecords(window.selectedEntity);
+                displayEntityDetails(entity);
+            });
+            
+            entityList.appendChild(entityBlock);
+        });
+    }
+
+    // Display entity details in form
+    function displayEntityDetails(entity) {
+        const detailsForm = document.getElementById('details-form');
+        const noSelectionMessage = document.getElementById('no-selection-message');
+        
+        if (!detailsForm) {
+            console.error('Details form not found');
             return;
         }
 
-        return response;
-    };
+        detailsForm.style.display = 'block';
+        if (noSelectionMessage) {
+            noSelectionMessage.style.display = 'none';
+        }
 
-    // Function to handle form submission
-    const handleFormSubmit = async () => {
+        document.getElementById('legal-entity-name').value = entity.legal_Entity_Name || entity.Legal_Entity_Name;
+        document.getElementById('hfm-code').value = entity.hfm_Code || entity.HFM_Code;
+
+        document.getElementById('fiscal-period').value = '';
+        document.getElementById('state-province').value = '';
+        document.getElementById('erp').value = '';
+        document.getElementById('currency').value = '';
+        document.getElementById('net-vat-receivable').value = '';
+        document.getElementById('net-vat-payable').value = '';
+        document.getElementById('comments').value = '';
+    }
+
+    // Load dropdown options
+    async function loadDropdownOptions() {
         try {
-            // Get the selected entity ID
-            const selectedButton = document.querySelector('.arrow-button[data-selected="true"]');
-            if (!selectedButton) {
-                alert('Please select an entity first');
-                return;
-            }
-            const entityId = selectedButton.getAttribute('data-entity-id');
-
-            // Get user ID from JWT token
-            const token = localStorage.getItem("jwtToken");
-            if (!token) {
-                alert('Your session has expired. Please log in again.');
-                window.location.href = 'login.html';
-                return;
+            const response = await fetch('/input-options.json');
+            const options = await response.json();
+            
+            // Populate Fiscal Period dropdown
+            const fiscalPeriodSelect = document.getElementById('fiscal-period');
+            if (fiscalPeriodSelect) {
+                options.fiscalPeriods.forEach(period => {
+                    const option = document.createElement('option');
+                    option.value = period;
+                    option.textContent = period;
+                    fiscalPeriodSelect.appendChild(option);
+                });
             }
 
-            let userId;
-            try {
-                const payload = JSON.parse(atob(token.split(".")[1]));
-                // Try different possible claim names for user ID
-                userId = payload.sub || payload.nameid || payload.uid || payload.id || '1';
-                console.log('Token payload:', payload); // For debugging
-            } catch (error) {
-                console.error('Error parsing token:', error);
-                userId = '1'; // Fallback user ID
+            // Populate ERP dropdown
+            const erpSelect = document.getElementById('erp');
+            if (erpSelect) {
+                options.erp.forEach(erp => {
+                    const option = document.createElement('option');
+                    option.value = erp;
+                    option.textContent = erp;
+                    erpSelect.appendChild(option);
+                });
             }
 
-            const now = new Date().toISOString();
-
-            const formData = {
-                Company_Code: entityId === '1' ? 'DEGA' : 'ABCD',
-                Legal_Entity_Name: document.getElementById("legal-entity").value,
-                Tax_Reporting_Country: entityId === '1' ? 'Denmark' : 'USA',
-                HFM_Code: document.getElementById("hfm-code").value,
-                Fiscal_Period: document.getElementById("fiscal-period").value,
-                State_Province: document.getElementById("state").value,
-                Net_VAT_Receivable: parseFloat(document.getElementById("vat-receivable").value) || 0,
-                Net_VAT_Payable: parseFloat(document.getElementById("vat-payable").value) || 0,
-                Comments: document.getElementById("comments").value,
-                Date: now,
-                ERP: "SAP",
-                Currency: "USD",
-                Updatecheck: false,
-                Created: now,
-                Modified: now,
-                Created_By: userId.toString(),
-                Modified_By: userId.toString()
-            };
-
-            const response = await callApi('/api/TaxCollectedDetails', 'POST', formData);
-
-            if (response.ok) {
-                const result = await response.json();
-                alert('Data saved successfully!');
-                console.log('Saved data:', result);
-            } else {
-                const errorData = await response.json();
-                let errorMessage = 'Failed to save data:\n';
-                if (errorData.errors) {
-                    Object.keys(errorData.errors).forEach(key => {
-                        errorMessage += `${key}: ${errorData.errors[key].join(', ')}\n`;
-                    });
-                } else {
-                    errorMessage += errorData.title || 'Unknown error occurred';
-                }
-                alert(errorMessage);
+            // Populate Currency dropdown
+            const currencySelect = document.getElementById('currency');
+            if (currencySelect) {
+                options.currencies.forEach(currency => {
+                    const option = document.createElement('option');
+                    option.value = currency.split(' - ')[0];
+                    option.textContent = currency;
+                    currencySelect.appendChild(option);
+                });
             }
         } catch (error) {
-            console.error('Error saving data:', error);
-            alert('Failed to save data. Please try again.');
+            console.error('Error loading dropdown options:', error);
         }
-    };
+    }
 
-    const renderInputFields = (entityId) => {
-        console.log("Rendering input fields for Entity ID:", entityId);
+    // Load Fiscal Records
+    async function loadFiscalRecords(entityId) {
+        try {
+            const response = await callApi(`/api/TaxCollectedDetails/${entityId}`);
+            if (response.ok) {
+                const records = await response.json();
+                displayFiscalRecords(records);
+            }
+        } catch (error) {
+            console.error('Error loading fiscal records:', error);
+        }
+    }
 
-        setTimeout(() => {
-            detailsContent.innerHTML = `
-                <div class="form-row">
-                    <label for="legal-entity">Legal Entity Name:</label>
-                    <input type="text" id="legal-entity" name="legal-entity" value="${entityId === '1' ? 'Maersk A/S' : 'Example Corp'}">
-                    <label for="hfm-code">HFM Code:</label>
-                    <input type="text" id="hfm-code" name="hfm-code" value="${entityId === '1' ? 'DK846U' : 'XY1234'}">
+    // Display Fiscal Records
+    function displayFiscalRecords(records) {
+        const fiscalRecordsList = document.getElementById('fiscal-records-list');
+        fiscalRecordsList.innerHTML = '';
+        
+        if (!records || records.length === 0) {
+            fiscalRecordsList.innerHTML = '<div class="no-records">No records found</div>';
+            return;
+        }
+        
+        records.forEach(record => {
+            const recordElement = document.createElement('div');
+            recordElement.className = 'fiscal-record';
+            recordElement.innerHTML = `
+                <div class="fiscal-record-header">
+                    <span class="fiscal-period">${record.fiscal_Period || record.Fiscal_Period}</span>
                 </div>
-                <div class="form-row">
-                    <label for="fiscal-period">* Fiscal Period:</label>
-                    <select id="fiscal-period" name="fiscal-period">
-                        <option value="Q1">Q1</option>
-                        <option value="Q2">Q2</option>
-                        <option value="Q3">Q3</option>
-                        <option value="Q4">Q4</option>
-                    </select>
-                    <label for="state">State/Province:</label>
-                    <input type="text" id="state" name="state" placeholder="Enter state">
-                </div>
-                <div class="form-row">
-                    <label for="vat-receivable">Net VAT Receivable:</label>
-                    <input type="number" id="vat-receivable" name="vat-receivable" placeholder="0.00">
-                    <label for="vat-payable">Net VAT Payable:</label>
-                    <input type="number" id="vat-payable" name="vat-payable" placeholder="0.00">
-                </div>
-                <div class="form-row">
-                    <label for="comments">Comments:</label>
-                    <textarea id="comments" name="comments" rows="3"></textarea>
-                </div>
-                <div class="form-row">
-                    <button type="button" class="save-button">Save</button>
+                <div class="fiscal-record-body">
+                    <span class="state-province">${record.state_Province || record.State_Province || 'N/A'}</span>
                 </div>
             `;
-
-            // Add event listener to save button
-            const saveButton = detailsContent.querySelector('.save-button');
-            if (saveButton) {
-                saveButton.addEventListener('click', handleFormSubmit);
-            }
-
-            console.log("Input fields rendered successfully");
-        }, 1500);
-    };
-
-    // Add event listeners to arrow buttons
-    arrowButtons.forEach(button => {
-        button.addEventListener("click", (e) => {
-            // Remove selected state from all buttons
-            arrowButtons.forEach(btn => btn.removeAttribute('data-selected'));
-            
-            const entityId = e.target.getAttribute('data-entity-id');
-            // Mark this button as selected
-            e.target.setAttribute('data-selected', 'true');
-            
-            console.log("Arrow button clicked! Entity ID:", entityId);
-
-            if (!entityId) {
-                console.error("No entity ID found for the clicked button");
-                alert("Please select a valid entity");
-                return;
-            }
-
-            showLoading();
-            renderInputFields(entityId);
+            fiscalRecordsList.appendChild(recordElement);
         });
-    });
+    }
+
+    // Handle form submission
+    async function handleFormSubmit(event) {
+        event.preventDefault();
+        
+        if (!window.selectedEntity) {
+            alert('Please select an entity first');
+            return;
+        }
+
+        const formData = new FormData(event.target);
+        const data = {
+            entityID: window.selectedEntity,
+            legal_Entity_Name: formData.get('legal_Entity_Name'),
+            hfm_Code: formData.get('hfm_Code'),
+            fiscal_Period: formData.get('fiscal_Period'),
+            state_Province: formData.get('state_Province'),
+            erp: formData.get('erp'),
+            currency: formData.get('currency'),
+            net_VAT_Receivable: parseFloat(formData.get('net_VAT_Receivable')) || 0,
+            net_VAT_Payable: parseFloat(formData.get('net_VAT_Payable')) || 0,
+            comments: formData.get('comments')
+        };
+
+        try {
+            const response = await callApi('/api/TaxCollectedDetails', 'POST', data);
+            if (response.ok) {
+                alert('Details saved successfully');
+                // Refresh the fiscal records display
+                loadFiscalRecords(window.selectedEntity);
+                // Reset form but keep the entity details
+                const entityName = document.getElementById('legal-entity-name').value;
+                const hfmCode = document.getElementById('hfm-code').value;
+                event.target.reset();
+                document.getElementById('legal-entity-name').value = entityName;
+                document.getElementById('hfm-code').value = hfmCode;
+            } else {
+                const error = await response.text();
+                alert('Failed to save details: ' + error);
+            }
+        } catch (error) {
+            console.error('Error saving details:', error);
+            alert('Failed to save details. Please try again.');
+        }
+    }
+
+    // Add form submit event listener
+    if (detailsForm) {
+        detailsForm.addEventListener('submit', handleFormSubmit);
+    }
+
+    // Initialize
+    loadEntities();
+    loadDropdownOptions();
 });

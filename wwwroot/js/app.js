@@ -55,15 +55,16 @@ document.addEventListener("DOMContentLoaded", () => {
   
           if (response.ok) {
             const result = await response.json();
-            const jwtToken = result.token; // Store JWT token
-  
-            // Save the token to localStorage
+            console.log("Server Response:", result); // Log to debug structure
+          
+            const jwtToken = result.Token; // Adjust key if needed
+            if (!jwtToken) {
+              alert("Login successful, but token is missing in the response.");
+              return;
+            }
+          
             localStorage.setItem("jwtToken", jwtToken);
-  
             alert("Login successful!");
-            console.log("JWT Token:", jwtToken);
-  
-            // Redirect to dashboard.html
             window.location.href = "dashboard.html";
           } else {
             const error = await response.json();

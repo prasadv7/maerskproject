@@ -9,52 +9,71 @@ public class AppDbContext : DbContext
     // Define DbSets for models
     public DbSet<User> Users { get; set; }
     public DbSet<UpdateHistory> UpdateHistories { get; set; }
-
-    public DbSet<TaxCollectedDetails> TaxCollectedDetails { get; set; } // Add TaxCollectedDetails
+    public DbSet<Entity> Entities { get; set; }
+    public DbSet<TaxCollectedDetails> TaxCollectedDetails { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        // Load configuration from appsettings.json
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .Build();
-
-        var dbSettings = configuration.GetSection("DatabaseSettings");
-        var provider = dbSettings["Provider"];
-        var connectionString = dbSettings["ConnectionString"];
-
-        // Configure database provider dynamically
-        switch (provider)
+        if (!optionsBuilder.IsConfigured)
         {
-            case "SQLServer":
-                optionsBuilder.UseSqlServer(connectionString);
-                break;
-            case "PostgreSQL":
-                optionsBuilder.UseNpgsql(connectionString);
-                break;
-            case "SQLite":
-                optionsBuilder.UseSqlite(connectionString);
-                break;
-            default:
-                throw new Exception("Unsupported database provider");
+            // Load configuration from appsettings.json
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build();
+
+            var dbSettings = configuration.GetSection("DatabaseSettings");
+            var provider = dbSettings["Provider"];
+            var connectionString = dbSettings["ConnectionString"];
+
+            // Configure database provider dynamically
+            switch (provider)
+            {
+                case "SQLServer":
+                    optionsBuilder.UseSqlServer(connectionString);
+                    break;
+                case "PostgreSQL":
+                    optionsBuilder.UseNpgsql(connectionString);
+                    break;
+                case "SQLite":
+                    optionsBuilder.UseSqlite(connectionString);
+                    break;
+                default:
+                    throw new Exception("Unsupported database provider");
+            }
         }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Set up relationships for UserHistory
+        // Existing UpdateHistory configuration
         modelBuilder.Entity<UpdateHistory>()
-            .HasOne(h => h.User) // One history entry belongs to one user
-            .WithMany(u => u.UpdateHistories) // One user can have many history entries
-            .HasForeignKey(h => h.User_ID);
+            .HasOne(h => h.User)
+            .WithMany(u => u.UpdateHistories)
+            .HasForeignKey(h => h.User_ID)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        // Set up relationships for TaxCollectedDetails
+        // Existing TaxCollectedDetails-User configuration
         modelBuilder.Entity<TaxCollectedDetails>()
-            .HasOne(t => t.User) // One TaxCollectedDetails entry is created/modified by one user
-            .WithMany(u => u.TaxCollectedDetails) // One user can have many entries
-            .HasForeignKey(t => t.User_ID);
+            .HasOne(t => t.User)
+            .WithMany(u => u.TaxCollectedDetails)
+            .HasForeignKey(t => t.User_ID)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        base.OnModelCreating(modelBuilder); // Ensure any inherited behavior is preserved
+        // Updated Entity-TaxCollectedDetails configuration
+        modelBuilder.Entity<Entity>()
+            .HasMany(e => e.TaxCollectedDetails)
+            .WithOne(t => t.Entity)
+            .HasForeignKey(t => t.EntityID)
+            .IsRequired(false)  // Make it optional since EntityID is nullable
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Entity>(entity =>
+        {
+            entity.Property(e => e.Created_By).IsRequired(false);
+            entity.Property(e => e.Modified_By).IsRequired(false);
+        });
+
+        base.OnModelCreating(modelBuilder);
     }
 }

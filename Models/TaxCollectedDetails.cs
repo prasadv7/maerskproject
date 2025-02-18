@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json.Serialization;
 
 public class TaxCollectedDetails
@@ -47,5 +48,13 @@ public class TaxCollectedDetails
     [JsonPropertyName("net_VAT_Payable")]
     public decimal? Net_VAT_Payable { get; set; }
 
+    // Navigation property for User
     public User? User { get; set; }
+
+    // Foreign key for Entity
+    public int? EntityID { get; set; } // This establishes the relationship with Entity
+
+    // Navigation property for Entity
+    [JsonPropertyName("entity")]
+    public Entity? Entity { get; set; }
 }

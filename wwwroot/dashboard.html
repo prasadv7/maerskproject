@@ -34,35 +34,81 @@
     <!-- Unified Panels Bar -->
     <div class="unified-panels-bar">
         <!-- Entity Information Panel -->
-        <div class="entity-panel">
+        <div class="panel entity-panel">
             <h2>Entity Information</h2>
-            <div class="entity-block">
-                <div class="entity-details">
-                    <p><strong>CC:</strong> DEGA | <strong>HFM Code:</strong> DK846U</p>
-                    <p>A.P. Moller - Maersk A/S</p>
-                    <p>Denmark</p>
-                </div>
-                <div class="entity-arrow">
-                    <button class="arrow-button" data-entity-id="1">→</button>
-                </div>
-            </div>
-            <div class="entity-block">
-                <div class="entity-details">
-                    <p><strong>CC:</strong> ABCD | <strong>HFM Code:</strong> XY1234</p>
-                    <p>Example Corp</p>
-                    <p>USA</p>
-                </div>
-                <div class="entity-arrow">
-                    <button class="arrow-button" data-entity-id="2">→</button>
-                </div>
+            <div id="entity-list">
+                <!-- Entities will be loaded dynamically -->
             </div>
         </div>
 
+        <!-- Fiscal Period & State/Province Panel -->
+        <div class="panel fiscal-panel">
+            <h2>Fiscal Period & State/Province</h2>
+            <!-- Form elements removed from this section -->
+        </div>
+
         <!-- Details Panel -->
-        <div class="details-panel">
+        <div class="panel details-panel">
             <h2>Details</h2>
             <div id="details-content">
-                <h3>Welcome to the Dashboard</h3>
+                <form id="details-form" class="details-form" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="legal-entity-name">Legal Entity Name</label>
+                            <input type="text" id="legal-entity-name" name="legal_Entity_Name" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="hfm-code">HFM Code</label>
+                            <input type="text" id="hfm-code" name="hfm_Code" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fiscal-period">Fiscal Period*</label>
+                            <select id="fiscal-period" name="fiscal_Period" required>
+                                <option value="">Select Fiscal Period</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="state-province">State/Province</label>
+                            <input type="text" id="state-province" name="state_Province">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="erp">ERP</label>
+                            <select id="erp" name="erp">
+                                <option value="">Select ERP System</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="currency">Currency*</label>
+                            <select id="currency" name="currency" required>
+                                <option value="">Select Currency</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="net-vat-receivable">Net VAT Receivable*</label>
+                            <input type="number" id="net-vat-receivable" name="net_VAT_Receivable" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="net-vat-payable">Net VAT Payable*</label>
+                            <input type="number" id="net-vat-payable" name="net_VAT_Payable" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="comments">Comments</label>
+                        <textarea id="comments" name="comments"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" id="save-button" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+                <div id="no-selection-message">
+                    Please select an entity to view details
+                </div>
             </div>
         </div>
     </div>

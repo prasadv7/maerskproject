@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Integration</title>
+</head>
+<body>
+    <h1>Welcome to Chatbot Integration Page</h1>
+    <p>This page demonstrates the integration of a chatbot.</p>
+
+    <!-- Content goes here -->
+
+    <!-- Chatbot script included in footer -->
+    <script>
+        (function() {
+            // Constants
+            const API_BASE_URL = 'https://proctor-gpt-1037720132113.us-central1.run.app';
+
+            // Configuration
+            window.ChatbotConfig = {
+                apiUrl: API_BASE_URL
+            };
+
+            // Load the main chatbot bundle and initialize
+            const script = document.createElement('script');
+            script.src = `${API_BASE_URL}/bundle.js`;
+
+            // Handle script load event
+            script.onload = function() {
+                // Create container if it doesn't exist
+                if (!document.getElementById('chatbot-container')) {
+                    const container = document.createElement('div');
+                    container.id = 'chatbot-container';
+                    document.body.appendChild(container);
+                    console.log('Chatbot container created');
+                }
+
+                // Now that bundle is loaded, we can safely call renderChatbot
+                if (typeof renderChatbot === 'function') {
+                    renderChatbot('chatbot-container');
+                } else {
+                    console.error('renderChatbot function not found in bundle');
+                }
+            };
+
+            // Handle loading errors
+            script.onerror = function() {
+                console.error('Failed to load chatbot bundle');
+            };
+
+            // Append script to document
+            document.head.appendChild(script);
+        })();
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -128,12 +128,10 @@ else
 
 // Use middleware in correct order
 app.UseRouting();
+app.UseStaticFiles();
 app.UseCors("AllowAll");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseStaticFiles();
 
 // Configure endpoints
 app.MapControllers();
