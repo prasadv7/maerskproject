@@ -243,9 +243,52 @@ public class TaxCollectedDetailsController : ControllerBase
             _context.UpdateHistories.AddRange(history);
         }
 
-        await _context.SaveChangesAsync();
+        try 
+        {
+            await _context.SaveChangesAsync();
 
-        return Ok("Tax detail updated successfully.");
+            // Update all fields from the request
+            taxDetail.Fiscal_Period = updatedDetails.Fiscal_Period;
+            taxDetail.State_Province = updatedDetails.State_Province;
+            taxDetail.ERP = updatedDetails.ERP;
+            taxDetail.Currency = updatedDetails.Currency;
+            taxDetail.Net_VAT_Receivable = updatedDetails.Net_VAT_Receivable;
+            taxDetail.Net_VAT_Payable = updatedDetails.Net_VAT_Payable;
+            taxDetail.Comments = updatedDetails.Comments;
+
+            await _context.SaveChangesAsync();
+
+            // Return the updated record
+            return Ok(new { 
+                success = true,
+                message = "Tax detail updated successfully",
+                data = new {
+                    ID = taxDetail.ID,
+                    EntityID = taxDetail.EntityID,
+                    Company_Code = taxDetail.Company_Code,
+                    Legal_Entity_Name = taxDetail.Legal_Entity_Name,
+                    Tax_Reporting_Country = taxDetail.Tax_Reporting_Country,
+                    HFM_Code = taxDetail.HFM_Code,
+                    Fiscal_Period = taxDetail.Fiscal_Period,
+                    State_Province = taxDetail.State_Province,
+                    ERP = taxDetail.ERP,
+                    Currency = taxDetail.Currency,
+                    Net_VAT_Receivable = taxDetail.Net_VAT_Receivable,
+                    Net_VAT_Payable = taxDetail.Net_VAT_Payable,
+                    Comments = taxDetail.Comments,
+                    Modified = taxDetail.Modified,
+                    Modified_By = taxDetail.Modified_By
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { 
+                success = false,
+                error = "Failed to update tax detail", 
+                details = ex.Message 
+            });
+        }
     }
 
     // 5. Delete a TaxCollectedDetails by ID

@@ -255,6 +255,8 @@ document.addEventListener("DOMContentLoaded", () => {
         records.forEach(record => {
             const recordElement = document.createElement('div');
             recordElement.className = 'fiscal-record';
+            recordElement.dataset.recordId = record.ID || record.id; // Store record ID
+            recordElement.style.cursor = 'pointer'; // Make it look clickable
             
             const fiscalPeriod = record.fiscal_Period || record.Fiscal_Period || 'N/A';
             const stateProvince = record.state_Province || record.State_Province || 'N/A';
@@ -293,8 +295,74 @@ document.addEventListener("DOMContentLoaded", () => {
                     ` : ''}
                 </div>
             `;
+
+            // Add click handler to load record data into form
+            recordElement.addEventListener('click', () => {
+                fillFormWithRecordData(record);
+            });
+            
             fiscalRecordsList.appendChild(recordElement);
         });
+    }
+
+    // Function to fill form with record data
+    function fillFormWithRecordData(record) {
+        const form = document.getElementById('details-form');
+        if (!form) return;
+
+        // Store the record ID for update
+        form.dataset.recordId = record.ID || record.id;
+
+        // Fill form fields
+        form.querySelector('[name="fiscal_Period"]').value = record.fiscal_Period || record.Fiscal_Period || '';
+        form.querySelector('[name="state_Province"]').value = record.state_Province || record.State_Province || '';
+        form.querySelector('[name="erp"]').value = record.erp || record.ERP || '';
+        form.querySelector('[name="currency"]').value = record.currency || record.Currency || '';
+        form.querySelector('[name="net_VAT_Receivable"]').value = record.net_VAT_Receivable || record.Net_VAT_Receivable || '0';
+        form.querySelector('[name="net_VAT_Payable"]').value = record.net_VAT_Payable || record.Net_VAT_Payable || '0';
+        form.querySelector('[name="comments"]').value = record.comments || record.Comments || '';
+
+        // Change Save button to Update
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.textContent = 'Update';
+            submitButton.classList.add('update-mode');
+        }
+
+        // Add Cancel button if it doesn't exist
+        if (!form.querySelector('.cancel-button')) {
+            const cancelButton = document.createElement('button');
+            cancelButton.type = 'button';
+            cancelButton.className = 'cancel-button';
+            cancelButton.textContent = 'Cancel';
+            cancelButton.onclick = resetForm;
+            submitButton.parentNode.insertBefore(cancelButton, submitButton.nextSibling);
+        }
+    }
+
+    // Function to reset form
+    function resetForm() {
+        const form = document.getElementById('details-form');
+        if (!form) return;
+
+        // Clear the form
+        form.reset();
+        
+        // Remove record ID
+        delete form.dataset.recordId;
+
+        // Change Update button back to Save
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.textContent = 'Save';
+            submitButton.classList.remove('update-mode');
+        }
+
+        // Remove Cancel button
+        const cancelButton = form.querySelector('.cancel-button');
+        if (cancelButton) {
+            cancelButton.remove();
+        }
     }
 
     // Handle form submission
@@ -337,19 +405,75 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         try {
-            const response = await callApi('/api/TaxCollectedDetails', 'POST', data);
-            if (response.ok) {
-                alert('Details saved successfully');
-                // Refresh the fiscal records display
-                loadFiscalRecords(window.selectedEntity);
-                // Reset form but keep the entity details
-                event.target.reset();
-                document.getElementById('legal-entity-name').value = entityName;
-                document.getElementById('hfm-code').value = hfmCode;
+            const recordId = event.target.dataset.recordId;
+            console.log('Record ID:', recordId);
+            console.log('Update Data:', data);
+            
+            if (recordId) {
+                // Update existing record
+                console.log('Sending PUT request to:', `/api/TaxCollectedDetails/${recordId}`);
+                const response = await callApi(`/api/TaxCollectedDetails/${recordId}`, 'PUT', data);
+                console.log('Update Response Status:', response.status);
+                
+                if (response.ok) {
+                    const responseText = await response.text();
+                    console.log('Raw Response:', responseText);
+                    
+                    let result;
+                    try {
+                        result = JSON.parse(responseText);
+                        console.log('Parsed Response:', result);
+                        alert(result.message || 'Details updated successfully');
+                    } catch (parseError) {
+                        console.error('JSON Parse Error:', parseError);
+                        console.log('Non-JSON Response:', responseText);
+                        alert('Details updated successfully');
+                    }
+                    
+                    // Reset form state
+                    resetForm();
+                    
+                    // Refresh the fiscal records display
+                    console.log('Refreshing fiscal records for entity:', window.selectedEntity);
+                    await loadFiscalRecords(window.selectedEntity);
+                } else {
+                    console.error('Update failed with status:', response.status);
+                    let errorMessage = 'Failed to update details';
+                    try {
+                        const errorText = await response.text();
+                        console.log('Error Response:', errorText);
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            if (errorJson.error) {
+                                errorMessage = errorJson.error;
+                                if (errorJson.details) {
+                                    errorMessage += '\n' + errorJson.details;
+                                }
+                            }
+                        } catch (e) {
+                            errorMessage = errorText;
+                        }
+                    } catch (e) {
+                        console.error('Error reading response:', e);
+                    }
+                    alert(errorMessage);
+                }
             } else {
-                const errorResponse = await response.json();
-                const errorMessages = Object.values(errorResponse).flat().join('\n');
-                alert('Failed to save details:\n' + errorMessages);
+                // Create new record
+                const response = await callApi('/api/TaxCollectedDetails', 'POST', data);
+                if (response.ok) {
+                    alert('Details saved successfully');
+                    // Refresh the fiscal records display
+                    loadFiscalRecords(window.selectedEntity);
+                    // Reset form but keep the entity details
+                    event.target.reset();
+                    document.getElementById('legal-entity-name').value = entityName;
+                    document.getElementById('hfm-code').value = hfmCode;
+                } else {
+                    const errorResponse = await response.json();
+                    const errorMessages = Object.values(errorResponse).flat().join('\n');
+                    alert('Failed to save details:\n' + errorMessages);
+                }
             }
         } catch (error) {
             console.error('Error saving details:', error);
