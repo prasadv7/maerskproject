@@ -42,19 +42,35 @@ public class TaxCollectedDetailsController : ControllerBase
         return Ok(taxDetails);
     }
 
-    // 2. Get a specific TaxCollectedDetails by ID
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    // 2. Get TaxCollectedDetails by Entity ID
+    [HttpGet("{entityId}")]
+    public async Task<IActionResult> GetById(int entityId)
     {
-        var userId = int.Parse(User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value);
+        try
+        {
+            // Get user ID from the nameidentifier claim
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized("Invalid user identification");
+            }
 
-        var taxDetail = await _context.TaxCollectedDetails
-            .FirstOrDefaultAsync(t => t.ID == id && t.User_ID == userId);
+            var taxDetails = await _context.TaxCollectedDetails
+                .Where(t => t.EntityID == entityId && t.User_ID == userId)
+                .OrderByDescending(t => t.Created)
+                .ToListAsync();
 
-        if (taxDetail == null)
-            return NotFound("Tax detail not found.");
+            if (taxDetails == null || !taxDetails.Any())
+            {
+                return Ok(new List<TaxCollectedDetails>()); // Return empty list instead of 404
+            }
 
-        return Ok(taxDetail);
+            return Ok(taxDetails);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = "An error occurred while retrieving tax details", details = ex.Message });
+        }
     }
 
     // 3. Create a new TaxCollectedDetails
@@ -109,7 +125,7 @@ public class TaxCollectedDetailsController : ControllerBase
 
             return CreatedAtAction(
                 nameof(GetById),
-                new { id = taxCollectedDetails.ID },
+                new { entityId = taxCollectedDetails.EntityID },
                 taxCollectedDetails
             );
         }

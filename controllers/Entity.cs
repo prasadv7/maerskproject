@@ -83,7 +83,18 @@ public class EntityController : ControllerBase
         try
         {
             var entities = await _context.Entities
-                .Include(e => e.TaxCollectedDetails) // Include related TaxCollectedDetails
+                .Select(e => new
+                {
+                    e.ID,
+                    e.Company_Code,
+                    e.Legal_Entity_Name,
+                    e.Tax_Reporting_Country,
+                    e.HFM_Code,
+                    e.Created,
+                    e.Created_By,
+                    e.Modified,
+                    e.Modified_By
+                })
                 .ToListAsync();
             return Ok(entities);
         }

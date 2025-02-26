@@ -43,45 +43,66 @@ document.addEventListener("DOMContentLoaded", () => {
     async function loadEntities() {
         try {
             const response = await callApi('/api/Entity');
-            console.log('Entity API Response:', response);
-            if (response.ok) {
-                const entities = await response.json();
-                console.log('Entities loaded:', entities);
+            console.log('API Response Status:', response.status);
+            console.log('API Response Headers:', response.headers);
+            
+            if (!response || !response.ok) {
+                console.error('API Error:', response.status, response.statusText);
+                const errorText = await response.text();
+                console.error('Error Details:', errorText);
+                return;
+            }
+
+            const responseText = await response.text();
+            console.log('Raw Response:', responseText);
+
+            if (!responseText) {
+                console.error('Empty response received');
+                return;
+            }
+
+            const entities = JSON.parse(responseText);
+            console.log('Parsed Entities:', entities);
+
+            if (Array.isArray(entities)) {
                 displayEntities(entities);
             } else {
-                console.error('Failed to load entities:', await response.text());
+                console.error('Invalid response format - expected array');
+                displayEntities([]);
             }
         } catch (error) {
             console.error('Error loading entities:', error);
+            displayEntities([]);
         }
     }
 
     // Display Entities in the Panel
     function displayEntities(entities = []) {
-        console.log('Displaying entities:', entities);
         entityList.innerHTML = '';
         
         if (entities.length === 0) {
-            const noEntitiesMessage = document.createElement('div');
-            noEntitiesMessage.className = 'no-entities-message';
-            noEntitiesMessage.innerHTML = `
-                <p>No entities available.</p>
-            `;
-            entityList.appendChild(noEntitiesMessage);
+            entityList.innerHTML = `
+                <div class="no-entities-message">
+                    <p>No entities available.</p>
+                </div>`;
             return;
         }
         
         entities.forEach(entity => {
+            if (!entity) return;
+            
             const entityBlock = document.createElement('div');
             entityBlock.className = 'entity-block';
             
-            const companyInfo = `<strong>CC:</strong> ${entity.company_Code || entity.Company_Code} | <strong>HFM Code:</strong> ${entity.hfm_Code || entity.HFM_Code}`;
-            const entityName = entity.legal_Entity_Name || entity.Legal_Entity_Name;
-            const country = entity.tax_Reporting_Country || entity.Tax_Reporting_Country;
+            // Ensure we have values even if properties are missing
+            const companyCode = entity.Company_Code || entity.company_Code || 'N/A';
+            const hfmCode = entity.HFM_Code || entity.hfm_Code || 'N/A';
+            const entityName = entity.Legal_Entity_Name || entity.legal_Entity_Name || 'N/A';
+            const country = entity.Tax_Reporting_Country || entity.tax_Reporting_Country || 'N/A';
             
             entityBlock.innerHTML = `
                 <div class="entity-details">
-                    <p>${companyInfo}</p>
+                    <p><strong>CC:</strong> ${companyCode} | <strong>HFM Code:</strong> ${hfmCode}</p>
                     <p>${entityName}</p>
                     <p>${country}</p>
                 </div>
@@ -91,21 +112,14 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             
             entityBlock.addEventListener('click', () => {
-                document.querySelectorAll('.entity-block').forEach(block =>
+                // Remove selection from all blocks
+                document.querySelectorAll('.entity-block').forEach(block => 
                     block.classList.remove('selected'));
                 
+                // Add selection to clicked block
                 entityBlock.classList.add('selected');
-                window.selectedEntity = entity.ID || entity.id;
-                loadFiscalRecords(window.selectedEntity);
-                displayEntityDetails(entity);
-            });
-            
-            const arrowButton = entityBlock.querySelector('.arrow-button');
-            arrowButton.addEventListener('click', () => {
-                document.querySelectorAll('.entity-block').forEach(block =>
-                    block.classList.remove('selected'));
                 
-                entityBlock.classList.add('selected');
+                // Store selected entity and load its details
                 window.selectedEntity = entity.ID || entity.id;
                 loadFiscalRecords(window.selectedEntity);
                 displayEntityDetails(entity);
@@ -188,19 +202,42 @@ document.addEventListener("DOMContentLoaded", () => {
     // Load Fiscal Records
     async function loadFiscalRecords(entityId) {
         try {
+            console.log('Loading fiscal records for entity:', entityId);
             const response = await callApi(`/api/TaxCollectedDetails/${entityId}`);
-            if (response.ok) {
-                const records = await response.json();
-                displayFiscalRecords(records);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error loading fiscal records:', errorText);
+                displayFiscalRecords([]);
+                return;
             }
+
+            const responseText = await response.text();
+            console.log('Fiscal records response:', responseText);
+
+            if (!responseText) {
+                console.log('No fiscal records found');
+                displayFiscalRecords([]);
+                return;
+            }
+
+            const records = JSON.parse(responseText);
+            console.log('Parsed fiscal records:', records);
+            displayFiscalRecords(records);
         } catch (error) {
             console.error('Error loading fiscal records:', error);
+            displayFiscalRecords([]);
         }
     }
 
     // Display Fiscal Records
     function displayFiscalRecords(records) {
         const fiscalRecordsList = document.getElementById('fiscal-records-list');
+        if (!fiscalRecordsList) {
+            console.error('Fiscal records list element not found');
+            return;
+        }
+
         fiscalRecordsList.innerHTML = '';
         
         if (!records || records.length === 0) {
@@ -208,15 +245,52 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
         
+        // Sort records by creation date (newest first)
+        records.sort((a, b) => {
+            const dateA = new Date(a.Created || a.created);
+            const dateB = new Date(b.Created || b.created);
+            return dateB - dateA;
+        });
+        
         records.forEach(record => {
             const recordElement = document.createElement('div');
             recordElement.className = 'fiscal-record';
+            
+            const fiscalPeriod = record.fiscal_Period || record.Fiscal_Period || 'N/A';
+            const stateProvince = record.state_Province || record.State_Province || 'N/A';
+            const netVatReceivable = record.net_VAT_Receivable || record.Net_VAT_Receivable || 0;
+            const netVatPayable = record.net_VAT_Payable || record.Net_VAT_Payable || 0;
+            const currency = record.currency || record.Currency || '';
+            const erp = record.erp || record.ERP || 'N/A';
+            const comments = record.comments || record.Comments || '';
+            
             recordElement.innerHTML = `
                 <div class="fiscal-record-header">
-                    <span class="fiscal-period">${record.fiscal_Period || record.Fiscal_Period}</span>
+                    <span class="fiscal-period">${fiscalPeriod}</span>
                 </div>
                 <div class="fiscal-record-body">
-                    <span class="state-province">${record.state_Province || record.State_Province || 'N/A'}</span>
+                    <div class="record-detail">
+                        <span class="label">State/Province:</span>
+                        <span class="value">${stateProvince}</span>
+                    </div>
+                    <div class="record-detail">
+                        <span class="label">ERP System:</span>
+                        <span class="value">${erp}</span>
+                    </div>
+                    <div class="record-detail">
+                        <span class="label">Net VAT Receivable:</span>
+                        <span class="value">${currency} ${netVatReceivable.toFixed(2)}</span>
+                    </div>
+                    <div class="record-detail">
+                        <span class="label">Net VAT Payable:</span>
+                        <span class="value">${currency} ${netVatPayable.toFixed(2)}</span>
+                    </div>
+                    ${comments ? `
+                    <div class="record-detail">
+                        <span class="label">Comments:</span>
+                        <span class="value">${comments}</span>
+                    </div>
+                    ` : ''}
                 </div>
             `;
             fiscalRecordsList.appendChild(recordElement);
@@ -233,10 +307,26 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const formData = new FormData(event.target);
+        const entityName = formData.get('legal_Entity_Name');
+        const hfmCode = formData.get('hfm_Code');
+
+        // Get the selected entity details from the form
+        const selectedEntityElement = document.querySelector('.entity-block.selected');
+        if (!selectedEntityElement) {
+            alert('Please select an entity first');
+            return;
+        }
+
+        // Extract company code and tax reporting country from the selected entity
+        const companyCode = selectedEntityElement.querySelector('p:first-child').textContent.split('|')[0].replace('CC:', '').trim();
+        const taxReportingCountry = selectedEntityElement.querySelector('p:last-child').textContent.trim();
+
         const data = {
             entityID: window.selectedEntity,
-            legal_Entity_Name: formData.get('legal_Entity_Name'),
-            hfm_Code: formData.get('hfm_Code'),
+            company_Code: companyCode,
+            legal_Entity_Name: entityName,
+            tax_Reporting_Country: taxReportingCountry,
+            hfm_Code: hfmCode,
             fiscal_Period: formData.get('fiscal_Period'),
             state_Province: formData.get('state_Province'),
             erp: formData.get('erp'),
@@ -253,14 +343,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Refresh the fiscal records display
                 loadFiscalRecords(window.selectedEntity);
                 // Reset form but keep the entity details
-                const entityName = document.getElementById('legal-entity-name').value;
-                const hfmCode = document.getElementById('hfm-code').value;
                 event.target.reset();
                 document.getElementById('legal-entity-name').value = entityName;
                 document.getElementById('hfm-code').value = hfmCode;
             } else {
-                const error = await response.text();
-                alert('Failed to save details: ' + error);
+                const errorResponse = await response.json();
+                const errorMessages = Object.values(errorResponse).flat().join('\n');
+                alert('Failed to save details:\n' + errorMessages);
             }
         } catch (error) {
             console.error('Error saving details:', error);
